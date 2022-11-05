@@ -341,27 +341,45 @@ class FuelScraper:
         This function is the core of the main loop
         aimed to support multiprocessing
         """
-        task_beggin = datetime.now()
+        def main_loop(url: str, td: tuple, f: str, retries=0):
+            try:
+                # Main loop
+                drv = self.__webpage_load(url)
+                popup_error = self.__web_navigation(drv, td[0], td[1])
 
-        task_details = tup
-        logging.info("{} selected".format(task_details))
+                if not popup_error:
+                    self.__change_results_page(drv)
+                    self.__page_navigation(drv, f, td[1], self.__get_num_pages(drv))
 
-        # Main loop
-        drv = self.__webpage_load(adrs)
-        popup_error = self.__web_navigation(drv, task_details[0], task_details[1])
+                drv.quit()
+            except:
+                logging.info("{} raised an exception in main loop".format(td))
 
-        if not popup_error:
-            self.__change_results_page(drv)
-            self.__page_navigation(drv, fp, task_details[1], self.__get_num_pages(drv))
+                # Quit webdriver if still available
+                try:
+                    drv.quit()
+                except:
+                    pass
+                if retries < 3:
+                    logging.info("Retry num {} will begin in 3 minutes".format(retries+1))
+                    time.sleep(3*60)
+                    main_loop(url, td, f, retries+1)
+                else:
+                    logging.info("Maximum number of retries achieved")
 
-        drv.quit()
+        task_begin = datetime.now()
 
-        scrap_time = datetime.now() - task_beggin
+        logging.info("{} selected".format(tup))
+
+        main_loop(adrs, tup, fp)
+
+        scrap_time = datetime.now() - task_begin
         # BEST PRACTICE:  random idle
         time.sleep(scrap_time.total_seconds() * 2)
+
         # Logs
-        scrap_time = datetime.now() - task_beggin
-        logging.info("Scraping time for {}: {:.1f} seconds".format(task_details, scrap_time.total_seconds()))
+        scrap_time = datetime.now() - task_begin
+        logging.info("Scraping time for {}: {:.1f} seconds".format(tup, scrap_time.total_seconds()))
         elapsed_time = datetime.now() - bg
         logging.info("Elapsed time: {}".format(elapsed_time))
 
@@ -413,7 +431,7 @@ class FuelScraper:
         random.shuffle(task_pool)
 
         counter = 0
-        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
             future_to_main = {executor.submit(self.__task_process, task, self.url, beginning, filepath): task for task in task_pool}
             for future in concurrent.futures.as_completed(future_to_main):
                 tsk = future_to_main[future]
