@@ -16,7 +16,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 
 
-class FuelScraper():
+class FuelScraper:
 
     def __init__(self):
         self.url = "https://geoportalgasolineras.es/geoportal-instalaciones/Inicio"
@@ -88,20 +88,34 @@ class FuelScraper():
 
         return drv
 
-    def __discovery(self, address: str, drv: webdriver) -> tuple:
+    def __webpage_load(self, address: str) -> webdriver:
+        """
+        This functions calls driver setup,
+        loads webpage, checks user-agent and
+        waits for the content to be loaded
+        """
+        # Setup a new driver & load url
+        drv = self.__driver_setup()
+        drv.get(address)
+
+        # Getting webdriver user-agent
+        agent = drv.execute_script("return navigator.userAgent")
+        # logging.info("Agent is {}".format(agent))
+
+        # Wait until webpage is loaded
+        wait_element = WebDriverWait(drv, timeout=10).until(
+            EC.presence_of_element_located((By.XPATH, "//select[@id='provincias_select_id']")))
+
+        return drv
+
+    def __discovery(self, address: str) -> tuple:
         """
         This functions performs initial webpage discovery looking for:
         - Provinces available for selection
         - Fuel types available for selection
         Returns a tuple with 2 list; 1st with provinces, 2nd with fuel types
         """
-        drv.get(address)
-        wait_element = WebDriverWait(drv, timeout=10).until(
-            EC.presence_of_element_located((By.XPATH, "//select[@id='provincias_select_id']")))
-
-        # Getting webdriver user-agent
-        agent = drv.execute_script("return navigator.userAgent")
-        # logging.info("Agent is {}".format(agent))
+        drv = self.__webpage_load(address)
 
         # BEST PRACTICE: idle
         time.sleep(1)
@@ -125,26 +139,6 @@ class FuelScraper():
             pass
 
         return province_list, fuel_list
-
-    def __webpage_load(self, address: str) -> webdriver:
-        """
-        This functions calls driver setup,
-        loads webpage, checks user-agent and
-        waits for the content to be loaded
-        """
-        # Setup a new driver & load url
-        drv = self.__driver_setup()
-        drv.get(address)
-
-        # Getting webdriver user-agent
-        agent = drv.execute_script("return navigator.userAgent")
-        # logging.info("Agent is {}".format(agent))
-
-        # Wait until webpage is loaded
-        wait_element = WebDriverWait(drv, timeout=10).until(
-            EC.presence_of_element_located((By.XPATH, "//select[@id='provincias_select_id']")))
-
-        return drv
 
     def __web_navigation(self, drv: webdriver, p: str, f: str) -> bool:
         """
@@ -371,111 +365,6 @@ class FuelScraper():
         elapsed_time = datetime.now() - bg
         logging.info("Elapsed time: {}".format(elapsed_time))
 
-    def fuel_scraper_loops(self, address: str):
-        """
-        This function performs the main loop for webpage scrping
-        running initial discovery, generating Task_pools for
-        fuel type dropdown & province dropdown selectors and
-        running through them until no more tasks are in the pools
-        """
-
-        # Logging configuration
-        log_format = '[%(process)d]\t%(asctime)s %(levelname)s: %(message)s'
-        logging.basicConfig(format=log_format, level=logging.INFO, datefmt="%H:%M:%S",
-                            handlers=[logging.StreamHandler(sys.stdout)])
-
-        beginning = datetime.now()
-        logging.info("Scraping process initiated")
-
-        base = self.__discovery(address, self.__driver_setup())
-
-        # TASK POOL
-        fuel_list = base[1].copy()
-
-        while len(fuel_list) > 0:
-            big_loop = datetime.now()
-
-            fuel = random.choice(fuel_list)
-            logging.info("{} selected, {} pending".format(fuel, len(fuel_list) - 1))
-
-            # Reassign province list for each fuel
-            prov_list = base[0].copy()
-
-            while len(prov_list) > 0:
-                province = random.choice(prov_list)
-                logging.info("{} selected, {} pending".format(province, len(prov_list) - 1))
-
-                # Main loop
-                drv = self.__webpage_load(address)
-                popup_error = self.__web_navigation(drv, province, fuel)
-
-                if not popup_error:
-                    self.__change_results_page(drv)
-                    self.__page_navigation(drv, fuel, self.__get_num_pages(drv), )
-
-                prov_list.remove(province)
-                drv.quit()
-            fuel_list.remove(fuel)
-
-            logging.info("Scraping time for {}: {}".format(fuel, datetime.now() - big_loop))
-            logging.info("Elapsed time: {}".format(datetime.now() - beginning))
-            # BEST PRACTICE:  random idle
-            time.sleep(random.randint(60, 180))
-
-        ending = datetime.now()
-        logging.info("Scraping finished")
-        logging.info("Elapsed time: {}".format(datetime.now() - beginning))
-
-    def fuel_scraper_random_loop(self, address: str):
-        """
-        This function performs the main loop for webpage scrping
-        running initial discovery, generating Task_pools for
-        all the possible combinations of fuel type & province
-        and runs through them until no more tasks are in the pools
-        """
-
-        # Logging configuration
-        log_format = '[%(process)d]\t%(asctime)s %(levelname)s: %(message)s'
-        logging.basicConfig(format=log_format, level=logging.INFO, datefmt="%H:%M:%S",
-                            handlers=[logging.StreamHandler(sys.stdout)])
-
-        beginning = datetime.now()
-        logging.info("Scraping process initiated")
-
-        base = self.__discovery(address, driver_setup())
-
-        # TASK POOL
-        prov_list = base[0].copy()
-        fuel_list = base[1].copy()
-        task_pool = [item for item in itertools.product(prov_list, fuel_list)]
-        random.shuffle(task_pool)
-
-        while len(task_pool) > 0:
-            big_loop = datetime.now()
-
-            task_details = random.choice(task_pool)
-            logging.info("{} selected, {} pending".format(task_details, len(task_pool) - 1))
-
-            # Main loop
-            drv = self.__webpage_load(address)
-            popup_error = self.__web_navigation(drv, task_details[0], task_details[1])
-
-            if not popup_error:
-                self.__change_results_page(drv)
-                self.__page_navigation(drv, task_details[1], self.__get_num_pages(drv), )
-
-            task_pool.remove(task_details)
-            drv.quit()
-
-            scrap_time = datetime.now() - big_loop
-            logging.info("Scraping time for {}: {}".format(task_details, scrap_time))
-            # BEST PRACTICE:  random idle
-            time.sleep(scrap_time.total_seconds() * 2)
-            logging.info("Elapsed time: {}".format(datetime.now() - beginning))
-
-        logging.info("Scraping finished")
-        logging.info("Elapsed time: {}".format(datetime.now() - beginning))
-
     def fuel_scraper_multi(self):
         """
         This function performs the main loop for webpage scrping
@@ -515,7 +404,7 @@ class FuelScraper():
                              "Address", "Road_side", "Update_date", "Price", "Brand",
                              "Sale_1", "Sale_2", "Fuel_type"])
 
-        base = self.__discovery(self.url, self.__driver_setup())
+        base = self.__discovery(self.url)
 
         # TASK POOL
         prov_list = base[0].copy()
