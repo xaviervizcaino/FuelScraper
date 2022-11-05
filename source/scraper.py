@@ -1,11 +1,10 @@
+import concurrent.futures
+import csv
 import itertools
 import logging
 import os
 import random
-import sys
 import time
-import csv
-import concurrent.futures
 from datetime import datetime
 from pathlib import Path
 
