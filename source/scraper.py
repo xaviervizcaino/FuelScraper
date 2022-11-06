@@ -23,6 +23,8 @@ class FuelScraper:
         self.folder = "dataset"
         self.dir = os.path.dirname(__file__)
         self.parent_dir = Path(self.dir).parent
+        self.max_retries = 5
+        self.max_workers = 20
 
     def __driver_setup(self) -> webdriver:
         """
@@ -88,7 +90,7 @@ class FuelScraper:
 
         return drv
 
-    def __webpage_load(self, address: str) -> webdriver:
+    def __webpage_load(self, address: str, tup: tuple) -> webdriver:
         """
         This functions calls driver setup,
         loads webpage, checks user-agent and
@@ -100,7 +102,7 @@ class FuelScraper:
 
         # Getting webdriver user-agent
         agent = drv.execute_script("return navigator.userAgent")
-        # logging.info("Agent is {}".format(agent))
+        logging.info("{} | Agent is {}".format(tup, agent))
 
         # Wait until webpage is loaded
         wait_element = WebDriverWait(drv, timeout=10).until(
@@ -115,7 +117,7 @@ class FuelScraper:
         - Fuel types available for selection
         Returns a tuple with 2 list; 1st with provinces, 2nd with fuel types
         """
-        drv = self.__webpage_load(address)
+        drv = self.__webpage_load(address, ("GENERAL", "DISCOVERY"))
 
         # BEST PRACTICE: idle
         time.sleep(1)
@@ -165,14 +167,12 @@ class FuelScraper:
 
         # Run province selection
         select_prov.select_by_visible_text(p)
-        # logging.info("\t{} selected".format(p))
 
         # BEST PRACTICE: random idle
         time.sleep(random.randint(50, 150) / 100)
 
         # Run fuel selection
         select_fuel.select_by_visible_text(f)
-        # logging.info("\t{} selected".format(f))
 
         # BEST PRACTICE: random idle
         time.sleep(random.randint(50, 150) / 100)
@@ -180,7 +180,6 @@ class FuelScraper:
         # Detect pop up with error
         try:
             drv.find_element(By.XPATH, "//*[@id='modalErrores']")
-            # logging.info("\t\tmodalErrores detected")
 
         except NoSuchElementException:
             # No pop-up found
@@ -188,7 +187,6 @@ class FuelScraper:
 
             # Submit 'busqueda'
             find_button_obj.submit()
-            # logging.info("\tBuscar executed")
 
             # Wait until results are loaded
             wait_element = WebDriverWait(drv, timeout=10).until(
@@ -201,6 +199,8 @@ class FuelScraper:
 
         # Pop-up found
         error_code = True
+        td = (p, f)
+        logging.info("{} | Combination without results".format(td))
 
         # BEST PRACTICE: random idle
         time.sleep(random.randint(25, 50) / 100)
@@ -208,7 +208,6 @@ class FuelScraper:
         # Close no-results pop-up
         find_close_button_obj = drv.find_element(By.CSS_SELECTOR, ".closeErrores")
         find_close_button_obj.click()
-        # logging.info("\t\tmodalErrores window closed")
 
         # BEST PRACTICE: random idle
         time.sleep(random.randint(50, 100) / 100)
@@ -239,11 +238,8 @@ class FuelScraper:
         res_text = list(set(webpage.select(".dataTables_info > span")[0].get_text().strip().split()))
         res_num = max(list(set(map(make_numbers, res_text))))
 
-        # logging.info("\t\t\t{} results found".format(res_num))
-
         # Input validity check
         if num not in [5, 10, 25]:
-            # logging.info("Number of results per page invalid, changed to 25")
             num = 25
 
         if res_num > 5:
@@ -251,12 +247,11 @@ class FuelScraper:
             result_length = drv.find_element(By.XPATH, "//*[@id ='datatableResultadoBusqueda_length']/label/select")
             srl = Select(result_length)
             srl.select_by_visible_text(str(num))
-            # logging.info("\t\t\tNumber of results per page changed to {}".format(str(num)))
 
             # BEST PRACTICE: random idle
             time.sleep(random.randint(100, 200) / 100)
 
-    def __get_num_pages(self, drv: webdriver) -> int:
+    def __get_num_pages(self, drv: webdriver, tup: tuple) -> int:
         """
         This function obtains the results number of pages.
         """
@@ -276,11 +271,11 @@ class FuelScraper:
         except ValueError:
             pg_result = 1
 
-        # logging.info("\t\t\t{} pages of results found".format(pg_result))
+        logging.info("{} | {} pages found".format(tup, pg_result))
 
         return pg_result
 
-    def __page_navigation(self, drv: webdriver, file: str, f: str, pages: int):
+    def __page_navigation(self, drv: webdriver, file: str, tup: tuple, pages: int):
         """
         This function iterates through results pages, and for each page;
         iterates through table rows taking values from the dynamically generated
@@ -290,7 +285,7 @@ class FuelScraper:
         """
         # Results pages navigation
         for i in range(1, pages + 1):
-            # logging.info("\t\t\t\tCrawling page = {}/{}".format(i, pages))
+            logging.info("{} | Crawling page = {}/{}".format(tup, i, pages))
 
             # Get inner HTML
             inner_html = drv.execute_script("return document.body.innerHTML")
@@ -299,7 +294,7 @@ class FuelScraper:
             capture = datetime.now()
 
             for line in table_body.find_all("tr"):
-                if f not in ["Bioetanol", "Biodiésel"]:
+                if tup[1] not in ["Bioetanol", "Biodiésel"]:
                     with open(file, 'a') as csvfile:
                         writer = csv.writer(csvfile, delimiter=";")
                         writer.writerow([capture.strftime("%Y/%m/%d"),
@@ -313,7 +308,7 @@ class FuelScraper:
                                          line.contents[8].text.strip(),
                                          line.contents[9].text.strip(),
                                          line.contents[10].text.strip(),
-                                         f])
+                                         tup[1]])
                 else:
                     with open(file, 'a') as csvfile:
                         writer = csv.writer(csvfile, delimiter=";")
@@ -328,7 +323,7 @@ class FuelScraper:
                                          line.contents[9].text.strip(),
                                          line.contents[10].text.strip(),
                                          line.contents[11].text.strip(),
-                                         f])
+                                         tup[1]])
             next_button = drv.find_element(By.CSS_SELECTOR, ".pagination-next")
             drv.execute_script("arguments[0].scrollIntoView(true);", next_button)
 
@@ -344,32 +339,32 @@ class FuelScraper:
         def main_loop(url: str, td: tuple, f: str, retries=0):
             try:
                 # Main loop
-                drv = self.__webpage_load(url)
+                drv = self.__webpage_load(url, td)
                 popup_error = self.__web_navigation(drv, td[0], td[1])
 
                 if not popup_error:
                     self.__change_results_page(drv)
-                    self.__page_navigation(drv, f, td[1], self.__get_num_pages(drv))
+                    self.__page_navigation(drv, f, td, self.__get_num_pages(drv, td))
 
                 drv.quit()
             except:
-                logging.info("{} raised an exception in main loop".format(td))
+                logging.info("{} | Exception raised in main loop".format(td))
 
                 # Quit webdriver if still available
                 try:
                     drv.quit()
                 except:
                     pass
-                if retries < 3:
-                    logging.info("Retry num {} will begin in 3 minutes".format(retries+1))
+                if retries < self.max_retries:
+                    logging.info("{} | Retry num {} will begin in 3 minutes".format(td, retries+1))
                     time.sleep(3*60)
                     main_loop(url, td, f, retries+1)
                 else:
-                    logging.info("Maximum number of retries achieved")
+                    logging.info("{} | Maximum number of retries achieved".format(td))
 
         task_begin = datetime.now()
 
-        logging.info("{} selected".format(tup))
+        logging.info("{} | Initializing".format(tup))
 
         main_loop(adrs, tup, fp)
 
@@ -379,9 +374,9 @@ class FuelScraper:
 
         # Logs
         scrap_time = datetime.now() - task_begin
-        logging.info("Scraping time for {}: {:.1f} seconds".format(tup, scrap_time.total_seconds()))
+        logging.info("{} | Ending. Scraping time: {:.1f} seconds".format(tup, scrap_time.total_seconds()))
         elapsed_time = datetime.now() - bg
-        logging.info("Elapsed time: {}".format(elapsed_time))
+        logging.info("GENERAL | Elapsed time: {}".format(elapsed_time))
 
     def fuel_scraper_multi(self):
         """
@@ -392,14 +387,16 @@ class FuelScraper:
         """
         beginning = datetime.now()
         tgt_fldr = os.path.join(self.parent_dir, self.folder)
+
         try:
             os.makedirs(tgt_fldr)
         except OSError:
             pass
+
         today = datetime.today().strftime("%Y%m%d")
 
         # Logging configuration
-        log_format = '[%(process)d]\t%(asctime)s %(levelname)s: %(message)s'
+        log_format = '[%(process)d] | %(asctime)s | %(levelname)s | %(message)s'
         logging.basicConfig(filename=os.path.join(tgt_fldr, today + ".log"),
                             filemode='w',
                             format=log_format,
@@ -411,7 +408,7 @@ class FuelScraper:
         console.setFormatter(console_format)
         logging.getLogger().addHandler(console)
 
-        logging.info("Scraping process initiated")
+        logging.info("GENERAL | Scraping process initiated")
         today = datetime.today().strftime("%Y%m%d")
 
         filepath = os.path.join(tgt_fldr, today + ".csv")
@@ -431,7 +428,8 @@ class FuelScraper:
         random.shuffle(task_pool)
 
         counter = 0
-        with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
+        # Concurrent execution
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             future_to_main = {executor.submit(self.__task_process, task, self.url, beginning, filepath): task for task in task_pool}
             for future in concurrent.futures.as_completed(future_to_main):
                 tsk = future_to_main[future]
@@ -439,10 +437,10 @@ class FuelScraper:
                     data = future.result()
                     counter += 1
                 except Exception as exc:
-                    logging.info("{} generated and exception {}".format(tsk, exc))
+                    logging.info("{} | Exception {} raised".format(tsk, exc))
                 else:
-                    logging.info("{} done; pending {}".format(tsk, len(future_to_main)-counter))
+                    logging.info("{} | Done, elements pending: {}".format(tsk, len(future_to_main)-counter))
 
-        logging.info("Scraping finished")
+        logging.info("GENERAL | Scraping process finished")
         elapsed_time = datetime.now() - beginning
-        logging.info("Elapsed time: {}".format(elapsed_time))
+        logging.info("GENERAL | Elapsed time: {}".format(elapsed_time))
