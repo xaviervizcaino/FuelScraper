@@ -348,7 +348,7 @@ class FuelScraper:
 
                 drv.quit()
             except:
-                logging.info("{} | Exception raised in main loop".format(td))
+                logging.warning("{} | Exception raised in main loop".format(td))
 
                 # Quit webdriver if still available
                 try:
@@ -360,7 +360,7 @@ class FuelScraper:
                     time.sleep(3*60)
                     main_loop(url, td, f, retries+1)
                 else:
-                    logging.info("{} | Maximum number of retries achieved".format(td))
+                    logging.error("{} | Maximum number of retries achieved".format(td))
 
         task_begin = datetime.now()
 
