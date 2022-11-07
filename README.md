@@ -2,7 +2,9 @@
 
 
 ### What's Fuel Scraper
-Fuel scraper is a piece of software that generates datasets from the information contained in https://geoportalgasolineras.es/geoportal-instalaciones, Spain official source to get updated with fuel prices. 
+Fuel scraper is a piece of software that generates datasets from the information contained in:
+
+https://geoportalgasolineras.es/geoportal-instalaciones, official portal in Sapin to be updated with fuel prices along the country. 
 
 ### How to install
 
