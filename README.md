@@ -36,14 +36,14 @@ Install:
 
 - [x] **source/main**: Software access point to start scraping activity.
 - [x] **source/scraper**: FuelScraper class implementation with the following methods:
-  - __driver_setup: sets up the webdriver with defined options.
-  - __webpage_load: calls driver setup and loads webpage.
-  - __discovery: runs an initial request and returns all options for mandatory fields. In this case all possible *provinces* & *fuel types*.
-  - __web_navigation: given the driver, one province and one fuel type, performs selections in dropdown objects and returns a boolean related with **no-results error**. 
-  - __change_results_page: reads the number of results found. If this is greater than 5, changes to 25 the number of results to be shown per page.
-  - __get_num_pages: given a selection that provides results, this method obtains the number of results pages from the html code and returns the value.
-  - __page_navigation: given a selection and a total number of pages, this method *crawls* through all result pages, obtaining data from html and appending target values into *.csv.
-  - __task_process: core of scrap class. All methods are called sequentially here.
+  - __driver_setup: webdriver setup with defined options.
+  - __webpage_load: webpage load after calling driver setup.
+  - __discovery: initial request to *discover* all possible options for mandatory fields, in this case all possible *provinces* & *fuel types*.
+  - __web_navigation: Given the driver, one province and one fuel type, navigates webpages performing selections in dropdown objects. It returns a boolean related with **no-results error**, when the input combination does not provide any results. 
+  - __change_results_page: reads the number of results found, when it's greater than 5, changes the number of results per page to 25.
+  - __get_num_pages: given an input combination that provides results, this method obtains the number of results pages from the html code and returns the value.
+  - __page_navigation: given an input combination that provides results and a total number of pages, this method *crawls* through all result pages, obtaining data from html and appending target values into *.csv.
+  - __task_process: core of FuelScraper class. All methods are called sequentially here. Retry functionallity is implemented when an exception is raised.
   - fuel_scraper_multi: entry point to the routines where it:
     - Makes folders (if necessary)
     - Configures loggers
@@ -58,10 +58,12 @@ Install:
 
 ### Additional possibilities
 
-Create a cron task to execute scraping at a given frequency:
+To create a cron task aimed to execute scraping at a given frequency (daily, for exemple):
 
     crontab -e
 
 Scroll down and type
 
     * 11 * * * cd ./FuelScraper && source venv/bin/activate && cd source && python3 main.py
+   
+where * 11 * * * stands for evary day at 11:00
