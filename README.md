@@ -4,7 +4,9 @@
 ### What's Fuel Scraper
 Fuel scraper is a piece of software that generates datasets from the information contained in:
 
-https://geoportalgasolineras.es/geoportal-instalaciones, official portal in Sapin to be updated with fuel prices along the country. 
+https://geoportalgasolineras.es/geoportal-instalaciones, 
+
+The official portal in Spain to be updated with fuel prices along the country. 
 
 ### How to install
 
@@ -45,20 +47,20 @@ Install:
   - __page_navigation: given an input combination that provides results and a total number of pages, this method *crawls* through all result pages, obtaining data from html and appending target values into *.csv.
   - __task_process: core of FuelScraper class. All methods are called sequentially here. Retry functionallity is implemented when an exception is raised.
   - fuel_scraper_multi: entry point to the routines where it:
-    - Makes folders (if necessary)
-    - Configures loggers
-    - Configures *.csv file and creates header
-    - Generates a random task pool
-    - Launches concurrent Threads to run all tasks in task pool
+    - Folder creation (if necessary)
+    - Logger configuration
+    - *.csv file configuration including header
+    - Random task pool generation
+    - Concurrent Threads launching to run all tasks in task pool
 
 ### Other files
 
 - [x] **dataset/YYYmmdd.csv**: dataset generated on year YYYY, month mm and day dd
-- [x] **dataset/YYYmmdd.log**: log file with all steps run to generate the dataset.
+- [x] **dataset/YYYmmdd.log**: log file with all minor steps run for dataset generation. Includes info, warnings and errors.
 
 ### Additional possibilities
 
-To create a cron task aimed to execute scraping at a given frequency (daily, for exemple):
+To create a cron task aimed to execute FuelScraper at a given frequency (daily, for exemple):
 
     crontab -e
 
