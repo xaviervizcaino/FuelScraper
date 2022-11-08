@@ -90,7 +90,7 @@ class FuelScraper:
 
         return drv
 
-    def __webpage_load(self, address: str, tup: tuple) -> webdriver:
+    def __webpage_load(self, address: str, info) -> webdriver:
         """
         This functions calls driver setup,
         loads webpage, checks user-agent and
@@ -102,7 +102,7 @@ class FuelScraper:
 
         # Getting webdriver user-agent
         agent = drv.execute_script("return navigator.userAgent")
-        logging.info("{} | Agent is {}".format(tup, agent))
+        logging.info("{} | Agent is {}".format(info, agent))
 
         # Wait until webpage is loaded
         wait_element = WebDriverWait(drv, timeout=10).until(
@@ -117,7 +117,7 @@ class FuelScraper:
         - Fuel types available for selection
         Returns a tuple with 2 list; 1st with provinces, 2nd with fuel types
         """
-        drv = self.__webpage_load(address, ("GENERAL", "DISCOVERY"))
+        drv = self.__webpage_load(address, "GENERAL")
 
         # BEST PRACTICE: idle
         time.sleep(1)
@@ -356,7 +356,7 @@ class FuelScraper:
                 except:
                     pass
                 if retries < self.max_retries:
-                    logging.info("{} | Retry num {} will begin in 3 minutes".format(td, retries+1))
+                    logging.warning("{} | Retry num {} will begin in 3 minutes".format(td, retries+1))
                     time.sleep(3*60)
                     main_loop(url, td, f, retries+1)
                 else:
@@ -437,7 +437,7 @@ class FuelScraper:
                     data = future.result()
                     counter += 1
                 except Exception as exc:
-                    logging.info("{} | Exception {} raised".format(tsk, exc))
+                    logging.error("{} | Exception {} raised".format(tsk, exc))
                 else:
                     logging.info("{} | Done, elements pending: {}".format(tsk, len(future_to_main)-counter))
 
