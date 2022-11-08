@@ -127,7 +127,8 @@ class FuelScraper:
         drv.quit()
 
         # Get province list from html selection list
-        province_list = [data.get_text().strip() for data in webpage.find(id='provincias_select_id').find_all("option")]
+        province_list = [data.get_text().strip() for data in
+                         webpage.find(id='provincias_select_id').find_all("option")]
 
         # Get fuel list from html selection list
         fuel_list = [data.get_text().strip() for data in
@@ -142,7 +143,7 @@ class FuelScraper:
 
         return province_list, fuel_list
 
-    def __web_navigation(self, drv: webdriver, p: str, f: str) -> bool:
+    def __web_navigation(self, drv: webdriver, tup: tuple) -> bool:
         """
         This function simulates web navigation.
         It takes webdriver, province and fuel as inputs and executes
@@ -166,13 +167,13 @@ class FuelScraper:
         time.sleep(1)
 
         # Run province selection
-        select_prov.select_by_visible_text(p)
+        select_prov.select_by_visible_text(tup[0])
 
         # BEST PRACTICE: random idle
         time.sleep(random.randint(50, 150) / 100)
 
         # Run fuel selection
-        select_fuel.select_by_visible_text(f)
+        select_fuel.select_by_visible_text(tup[1])
 
         # BEST PRACTICE: random idle
         time.sleep(random.randint(50, 150) / 100)
@@ -199,8 +200,7 @@ class FuelScraper:
 
         # Pop-up found
         error_code = True
-        td = (p, f)
-        logging.info("{} | Combination without results".format(td))
+        logging.info("{} | Combination without results".format(tup))
 
         # BEST PRACTICE: random idle
         time.sleep(random.randint(25, 50) / 100)
@@ -336,29 +336,29 @@ class FuelScraper:
         This function is the core of the main loop
         aimed to support multiprocessing
         """
-        def main_loop(url: str, td: tuple, f: str, retries=0):
+        def main_loop(url: str, td: tuple, f_path: str, retries=0):
             try:
                 # Main loop
                 drv = self.__webpage_load(url, td)
-                popup_error = self.__web_navigation(drv, td[0], td[1])
+                popup_error = self.__web_navigation(drv, td)
 
                 if not popup_error:
                     self.__change_results_page(drv)
-                    self.__page_navigation(drv, f, td, self.__get_num_pages(drv, td))
+                    self.__page_navigation(drv, f_path, td, self.__get_num_pages(drv, td))
 
                 drv.quit()
             except:
                 logging.warning("{} | Exception raised in main loop".format(td))
-
                 # Quit webdriver if still available
                 try:
                     drv.quit()
                 except:
                     pass
+
                 if retries < self.max_retries:
                     logging.warning("{} | Retry num {} will begin in 3 minutes".format(td, retries+1))
                     time.sleep(3*60)
-                    main_loop(url, td, f, retries+1)
+                    main_loop(url, td, f_path, retries + 1)
                 else:
                     logging.error("{} | Maximum number of retries achieved".format(td))
 
@@ -370,7 +370,7 @@ class FuelScraper:
 
         scrap_time = datetime.now() - task_begin
         # BEST PRACTICE:  random idle
-        time.sleep(scrap_time.total_seconds() * 2)
+        time.sleep(scrap_time.total_seconds() * random.randint(150, 200)/100)
 
         # Logs
         scrap_time = datetime.now() - task_begin
@@ -430,7 +430,8 @@ class FuelScraper:
         counter = 0
         # Concurrent execution
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            future_to_main = {executor.submit(self.__task_process, task, self.url, beginning, filepath): task for task in task_pool}
+            future_to_main = {executor.submit(self.__task_process, task, self.url, beginning,
+                                              filepath): task for task in task_pool}
             for future in concurrent.futures.as_completed(future_to_main):
                 tsk = future_to_main[future]
                 try:
