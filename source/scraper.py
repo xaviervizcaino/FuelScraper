@@ -328,7 +328,7 @@ class FuelScraper:
             drv.execute_script("arguments[0].scrollIntoView(true);", next_button)
 
             # BEST PRACTICE:  random idle
-            time.sleep(random.randint(200, 250) / 100)
+            time.sleep(random.randint(150, 250) / 100)
             next_button.click()
 
     def __task_process(self, tup: tuple, adrs: str, bg: datetime, fp: str):
@@ -356,8 +356,8 @@ class FuelScraper:
                     pass
 
                 if retries < self.max_retries:
-                    logging.warning("{} | Retry num {} will begin in 3 minutes".format(td, retries+1))
-                    time.sleep(3*60)
+                    logging.warning("{} | Retry num {} will begin in 2 minutes".format(td, retries+1))
+                    time.sleep(2*60)
                     main_loop(url, td, f_path, retries + 1)
                 else:
                     logging.error("{} | Maximum number of retries achieved".format(td))
@@ -370,7 +370,7 @@ class FuelScraper:
 
         scrap_time = datetime.now() - task_begin
         # BEST PRACTICE:  random idle
-        time.sleep(scrap_time.total_seconds() * random.randint(150, 200)/100)
+        time.sleep(scrap_time.total_seconds() * random.randint(75, 125)/100)
 
         # Logs
         scrap_time = datetime.now() - task_begin
@@ -396,7 +396,7 @@ class FuelScraper:
         today = datetime.today().strftime("%Y%m%d")
 
         # Logging configuration
-        log_format = '[%(process)d] | %(asctime)s | %(levelname)s | %(message)s'
+        log_format = '[%(thread)d] | %(asctime)s | %(levelname)s | %(message)s'
         logging.basicConfig(filename=os.path.join(tgt_fldr, today + ".log"),
                             filemode='w',
                             format=log_format,
