@@ -380,7 +380,7 @@ class FuelScraper:
 
     def fuel_scraper_multi(self):
         """
-        This function performs the main loop for webpage scrping
+        This function performs the main loop for webpage scraping
         running initial discovery, generating Task_pools for
         fuel type dropdown & province dropdown selectors and
         running through them until no more tasks are in the pools

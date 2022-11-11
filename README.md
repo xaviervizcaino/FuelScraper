@@ -25,13 +25,13 @@ The official portal in Spain to be updated with fuel prices along the country.
     virtual env
     source venv/bin/activate
  
-Install:
+Install requirements:
 
     pip install -r requirements.txt
 
 ### How to run the code
 
-    cd ./FuelScraper
+    cd ./FuelScraper/source
     python3 main.py
 
 ### Source code files
@@ -45,7 +45,7 @@ Install:
   - __change_results_page: reads the number of results found, when it's greater than 5, changes the number of results per page to 25.
   - __get_num_pages: given an input combination that provides results, this method obtains the number of results pages from the html code and returns the value.
   - __page_navigation: given an input combination that provides results and a total number of pages, this method *crawls* through all result pages, obtaining data from html and appending target values into *.csv.
-  - __task_process: core of FuelScraper class. All methods are called sequentially here. Retry functionallity is implemented when an exception is raised.
+  - __task_process: core of FuelScraper class. All methods are called sequentially here. Retry functionality is implemented when an exception is raised.
   - fuel_scraper_multi: entry point to the routines where it:
     - Folder creation (if necessary)
     - Logger configuration
@@ -60,12 +60,12 @@ Install:
 
 ### Additional possibilities
 
-To create a cron task aimed to execute FuelScraper at a given frequency (daily, for exemple):
+To create a cron task aimed to execute FuelScraper at a given frequency (daily, for example):
 
     crontab -e
 
 Scroll down and type
 
-    * 11 * * * cd ./FuelScraper && source venv/bin/activate && cd source && python3 main.py
+    0 11 * * * bash /home/datasci/PycharmProjects/FuelScraper/cron/main.py
    
-where * 11 * * * stands for evary day at 11:00
+where 0 11 * * * stands for every day at 11:00
