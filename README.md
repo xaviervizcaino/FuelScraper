@@ -66,6 +66,6 @@ To create a cron task aimed to execute FuelScraper at a given frequency (daily, 
 
 Scroll down and type
 
-    0 11 * * * bash /home/datasci/PycharmProjects/FuelScraper/cron/main.py
+    0 11 * * * bash /home/your/path/here/FuelScraper/cron/main.py
    
 where 0 11 * * * stands for every day at 11:00

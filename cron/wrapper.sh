@@ -1,3 +1,3 @@
 #!/bin/bash
-source /home/datasci/PycharmProjects/FuelScraper/venv/bin/activate
-python3 /home/datasci/PycharmProjects/FuelScraper/source/main.py
+source /home/your/path/here/FuelScraper/venv/bin/activate
+python3 /home/your/path/here/FuelScraper/source/main.py
