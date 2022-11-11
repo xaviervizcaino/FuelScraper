@@ -60,11 +60,21 @@ Install requirements:
 
 ### Additional possibilities
 
-To create a cron task aimed to execute FuelScraper at a given frequency (daily, for example):
+To run scraping on a given frequency (daily, weekly, ...) a cron task may be created calling the bash script *wrapper.sh*.
+1. Open FuelScraper/cron/wrapper.sh & update both paths to match yours:
+
+
+    Source /home/your/path/here/FuelScraper/venv/bin/activate. 
+
+    python3 /home/your/path/here/FuelScraper/source/main.py
+
+2. Open crontab
+
 
     crontab -e
 
-Scroll down and type
+3. Scroll down and type (for exemple)
+
 
     0 11 * * * bash /home/your/path/here/FuelScraper/cron/main.py
    
