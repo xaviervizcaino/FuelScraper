@@ -8,6 +8,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+import pandas as pd
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.common import NoSuchElementException
@@ -21,6 +22,7 @@ class FuelScraper:
     def __init__(self):
         self.url = "https://geoportalgasolineras.es/geoportal-instalaciones/Inicio"
         self.folder = "dataset"
+        self.daily = "daily"
         self.dir = os.path.dirname(__file__)
         self.parent_dir = Path(self.dir).parent
         self.max_retries = 5
@@ -378,6 +380,27 @@ class FuelScraper:
         elapsed_time = datetime.now() - bg
         logging.info("GENERAL | Elapsed time: {}".format(elapsed_time))
 
+    def __update_dataset(self, fp: str):
+        """
+        This functions concatenates the information extracted along the process
+        with the information already in the file dataset.csv, allowing the
+        accumulation of information along the time for time series analysis
+        """
+        # Create dataframe from csv just generated
+        df_file = pd.read_csv(fp, sep=";")
+        dataset_file = os.path.join(self.parent_dir, self.folder, "dataset.csv")
+        # Check whether dataset.csv file already exists
+        if os.path.isfile(dataset_file):
+            df_dataset = pd.read_csv(dataset_file, sep=";")
+            # Concatenate
+            df_dataset = pd.concat([df_dataset, df_file])
+            # Remove original dataset.csv file
+            os.remove(dataset_file)
+        else:
+            df_dataset = df_file.copy()
+        # Write new dataset.csv file
+        df_dataset.to_csv(dataset_file, sep=";", index=False)
+
     def fuel_scraper_multi(self):
         """
         This function performs the main loop for webpage scraping
@@ -386,7 +409,7 @@ class FuelScraper:
         running through them until no more tasks are in the pools
         """
         beginning = datetime.now()
-        tgt_fldr = os.path.join(self.parent_dir, self.folder)
+        tgt_fldr = os.path.join(self.parent_dir, self.folder, self.daily)
 
         try:
             os.makedirs(tgt_fldr)
@@ -441,6 +464,8 @@ class FuelScraper:
                     logging.error("{} | Exception {} raised".format(tsk, exc))
                 else:
                     logging.info("{} | Done, elements pending: {}".format(tsk, len(future_to_main)-counter))
+
+        self.__update_dataset(filepath)
 
         logging.info("GENERAL | Scraping process finished")
         elapsed_time = datetime.now() - beginning
