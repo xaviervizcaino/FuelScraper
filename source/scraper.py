@@ -26,7 +26,7 @@ class FuelScraper:
         self.dir = os.path.dirname(__file__)
         self.parent_dir = Path(self.dir).parent
         self.max_retries = 5
-        self.max_workers = 20
+        self.max_workers = 25
 
     def __driver_setup(self) -> webdriver:
         """
