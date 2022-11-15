@@ -1,12 +1,20 @@
-## Fuel scraper
+## FuelScraper
 
-
-### What's Fuel Scraper
-Fuel scraper is a piece of software that generates datasets from the information contained in:
+### What's FuelScraper
+FuelScraper is a piece of software that generates datasets from the information contained in:
 
 https://geoportalgasolineras.es/geoportal-instalaciones, 
 
-The official portal in Spain to be updated with fuel prices along the country. 
+the official portal in Spain to be updated with fuel prices along the country. 
+
+### Authors
+The authors of this project are:
+
+- [x] Martí Antentas Parés
+- [x] Xavier Vizcaino Gascon
+
+both students of *M2.951 - Tipologia i cicle de vida de les dades* subject, Data Science Master; UOC.
+
 
 ### How to install
 
@@ -18,9 +26,8 @@ The official portal in Spain to be updated with fuel prices along the country.
 *Mandatory*
 
     sudo apt install chromium-chromedriver
-    pip install selenium
 
-*Optional*
+*Optional but highly recommended*
 
     virtual env
     source venv/bin/activate
@@ -31,7 +38,7 @@ Install requirements:
 
 ### How to run the code
 
-    cd ./FuelScraper/source
+    cd /home/your/path/here/FuelScraper/source
     python3 main.py
 
 ### Source code files
@@ -55,8 +62,9 @@ Install requirements:
 
 ### Other files
 
-- [x] **dataset/YYYmmdd.csv**: dataset generated on year YYYY, month mm and day dd
-- [x] **dataset/YYYmmdd.log**: log file with all minor steps run for dataset generation. Includes info, warnings and errors.
+- [x] **dataset/dataset.csv**: general dataset which appends the daily information from all days the script is run.
+- [x] **dataset/daily/YYYmmdd.csv**: dataset generated on year YYYY, month mm and day dd.
+- [x] **dataset/daily/YYYmmdd.log**: log file with all steps run for dataset generation. Includes info, warnings and errors.
 
 ### Additional possibilities
 
@@ -64,18 +72,23 @@ To run scraping on a given frequency (daily, weekly, ...) a cron task may be cre
 1. Open FuelScraper/cron/wrapper.sh & update both paths to match yours:
 
 
-    Source /home/your/path/here/FuelScraper/venv/bin/activate. 
 
+    Source /home/your/path/here/FuelScraper/venv/bin/activate.
     python3 /home/your/path/here/FuelScraper/source/main.py
+
 
 2. Open crontab
 
 
+
     crontab -e
+
 
 3. Scroll down and type (for exemple)
 
 
+
     0 11 * * * bash /home/your/path/here/FuelScraper/cron/main.py
+
    
 where 0 11 * * * stands for every day at 11:00
